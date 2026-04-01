@@ -41,7 +41,7 @@ for i, col_name in enumerate(condition_cols):
     # Get the specific raw number and format it for Scikit-Learn
     single_raw_value = np.array([target_condition[i]])
     
-    # load the  specific GMM model we saved during nromalsing data
+    # load the  specific GMM model we saved during nromalsing
     specific_gmm = loaded_gmms[col_name]
     
     # Run it through the transformation function
@@ -52,7 +52,7 @@ for i, col_name in enumerate(condition_cols):
 
 condition_vector = np.hstack(normalised_condition)
 # 4. Generate Samples
-num_samples = 10
+num_samples = 100
 condition_tensor = torch.tensor(condition_vector, dtype=torch.float, device=device).repeat(num_samples, 1)
 z = torch.randn(num_samples, input_vector_dim, device=device)
 z.requires_grad_(True)
@@ -87,8 +87,10 @@ for step in range(num_steps):
     target_real = torch.ones_like(output)
     loss = criterion(output, target_real)
     
+    # Backpropagate the error directly into the NOISE
+    loss_prior = torch.mean(z**2) # add loss if z is changed to much outoff bound
     
-    total_loss = loss  + (0.01 * diversity_loss(generated_params))
+    total_loss = loss + (3.0 * loss_prior) + (0.01 * diversity_loss(generated_params))
     total_loss.backward()
     #loss.backward()
     optimizer.step()
