@@ -90,7 +90,7 @@ for step in range(num_steps):
     # Backpropagate the error directly into the NOISE
     loss_prior = torch.mean(z**2) # add loss if z is changed to much outoff bound
     
-    total_loss = loss + (3.0 * loss_prior) + (0.01 * diversity_loss(generated_params))
+    total_loss = loss + (1.5 * loss_prior) + (0.01 * diversity_loss(generated_params))
     total_loss.backward()
     #loss.backward()
     optimizer.step()
@@ -113,7 +113,7 @@ with torch.no_grad():
     final_probs = output.detach().cpu().numpy().flatten()
     
     # Pass the optimized z (15 dimensions)
-    final_normalized_inputs = (z).cpu().numpy()
+    final_normalized_inputs = torch.tanh(z).detach().cpu().numpy()
     
 
 
