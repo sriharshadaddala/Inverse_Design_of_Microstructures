@@ -41,7 +41,7 @@ for i, col_name in enumerate(condition_cols):
     # Get the specific raw number and format it for Scikit-Learn
     single_raw_value = np.array([target_condition[i]])
     
-    # Grab the specific GMM model we saved for this column
+    # load the  specific GMM model we saved during nromalsing data
     specific_gmm = loaded_gmms[col_name]
     
     # Run it through the transformation function
@@ -60,12 +60,10 @@ z.requires_grad_(True)
 optimizer = optim.Adam([z], lr=0.001)
 criterion = nn.BCELoss()
 
-def diversity_loss(batch_samples):
-    # Move to CPU just for this calculation to avoid the MPS error
+def diversity_loss(batch_samples):           # if the all the samples are same we penalise it with loss to add diversity to samples
+
     samples_cpu = batch_samples.cpu()
     dist = torch.cdist(samples_cpu, samples_cpu)
-    
-    # Calculate the loss on CPU, then move the scalar result back to the device
     loss = -torch.mean(dist)
     return loss.to(device)
 
@@ -89,10 +87,8 @@ for step in range(num_steps):
     target_real = torch.ones_like(output)
     loss = criterion(output, target_real)
     
-    # Backpropagate the error directly into the NOISE
-    loss_prior = torch.mean(z**2) 
     
-    total_loss = loss + (2.0 * loss_prior) + (0.01 * diversity_loss(generated_params))
+    total_loss = loss  + (0.01 * diversity_loss(generated_params))
     total_loss.backward()
     #loss.backward()
     optimizer.step()
@@ -114,7 +110,7 @@ print("\n=== OPTIMIZATION COMPLETE ===")
 with torch.no_grad():
     final_probs = output.detach().cpu().numpy().flatten()
     
-    # Pass ONLY the optimized z (15 dimensions) to the blind Generator
+    # Pass the optimized z (15 dimensions)
     final_normalized_inputs = (z).cpu().numpy()
     
 
